@@ -8,12 +8,22 @@ import { QuickLogger } from './components/QuickLogger';
 import { LedgerTable } from './components/LedgerTable';
 import { PhoneSyncModal } from './components/PhoneSyncModal';
 import { CapModal, EditLimitModal } from './components/CapModals';
-import { KHR_RATE, DEFAULT_CATEGORIES, I18N } from './constants';
+import { DEFAULT_KHR_RATE, fetchLiveKhrRate, DEFAULT_CATEGORIES, I18N } from './constants';
 
 export default function App() {
   const [currentLang, setCurrentLang] = useState('en');
   const [primaryCurrency, setPrimaryCurrency] = useState('USD');
   const [entryCurrency, setEntryCurrency] = useState('USD');
+  const [khrRate, setKhrRate] = useState(() => {
+    const cached = localStorage.getItem('budget_lens_khr_rate');
+    return cached ? Number(cached) : DEFAULT_KHR_RATE;
+  });
+
+  useEffect(() => {
+    fetchLiveKhrRate().then((rate) => {
+      if (rate && !isNaN(rate)) setKhrRate(rate);
+    });
+  }, []);
 
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isCapModalOpen, setIsCapModalOpen] = useState(false);
@@ -47,17 +57,17 @@ export default function App() {
     localStorage.setItem('budget_lens_expenses', JSON.stringify(expenses));
   }, [expenses]);
 
-  const toUSD = useCallback((amt, curr) => (curr === 'KHR' ? amt / KHR_RATE : amt), []);
+  const toUSD = useCallback((amt, curr) => (curr === 'KHR' ? amt / khrRate : amt), [khrRate]);
 
   const formatCurrency = useCallback(
     (amtUSD) => {
       const val = isNaN(amtUSD) ? 0 : amtUSD;
       if (primaryCurrency === 'KHR') {
-        return `${Math.round(val * KHR_RATE).toLocaleString('en-US')} ៛`;
+        return `${Math.round(val * khrRate).toLocaleString('en-US')} ៛`;
       }
       return `$${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     },
-    [primaryCurrency]
+    [primaryCurrency, khrRate]
   );
 
   const totalCapUSD = useMemo(
@@ -151,7 +161,9 @@ export default function App() {
                 <span>{t.badge_privacy}</span>
               </span>
             </div>
-            <p className="text-xs text-zinc-400 mt-1 font-mono">{t.header_sub}</p>
+            <p className="text-xs text-zinc-400 mt-1 font-mono">
+              {t.header_sub.replace('{rate}', (khrRate || DEFAULT_KHR_RATE).toLocaleString())}
+            </p>
           </div>
 
           <div className="flex items-center gap-2.5 flex-wrap">
@@ -227,7 +239,10 @@ export default function App() {
               </Button>
             </div>
             <div className="text-3xl font-bold text-zinc-100 tracking-tight">{formatCurrency(totalCapUSD)}</div>
-            <span className="text-xs text-zinc-500 mt-3 block">{t.kpi_cap_sub}</span>
+            <div className="text-xs text-zinc-500 font-mono mt-3 flex items-center justify-between">
+              <span>{t.kpi_cap_sub}</span>
+              <span className="text-[10px] text-zinc-600 font-mono">Peg: {(khrRate || DEFAULT_KHR_RATE).toLocaleString()} ៛/$</span>
+            </div>
           </Card>
 
           <Card className="p-5 font-mono">
@@ -275,12 +290,14 @@ export default function App() {
             formatCurrency={formatCurrency}
             totalSpendUSD={totalSpendUSD}
             toUSD={toUSD}
+            khrRate={khrRate}
             t={t}
           />
           <VelocityChart
             expenses={expenses}
             primaryCurrency={primaryCurrency}
             toUSD={toUSD}
+            khrRate={khrRate}
             t={t}
           />
         </section>

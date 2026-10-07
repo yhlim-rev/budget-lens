@@ -1,12 +1,13 @@
 import React, { useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { Card } from './common';
-import { KHR_RATE } from '../constants';
+import { DEFAULT_KHR_RATE } from '../constants';
 
 export const VelocityChart = ({
   expenses,
   primaryCurrency,
   toUSD,
+  khrRate,
   t
 }) => {
   const trendData = useMemo(() => {
@@ -22,11 +23,12 @@ export const VelocityChart = ({
       return [{ date: today, amount: 0 }];
     }
 
+    const rate = khrRate || DEFAULT_KHR_RATE;
     return dates.map((d) => ({
       date: d,
-      amount: primaryCurrency === 'KHR' ? Math.round(dateMap[d] * KHR_RATE) : parseFloat(dateMap[d].toFixed(2))
+      amount: primaryCurrency === 'KHR' ? Math.round(dateMap[d] * rate) : parseFloat(dateMap[d].toFixed(2))
     }));
-  }, [expenses, primaryCurrency, toUSD]);
+  }, [expenses, primaryCurrency, toUSD, khrRate]);
 
   return (
     <Card className="p-5 flex flex-col justify-between">

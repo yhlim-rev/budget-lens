@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { RotateCcw } from 'lucide-react';
 import { Card, Button } from './common';
-import { KHR_RATE } from '../constants';
+import { DEFAULT_KHR_RATE } from '../constants';
 
 export const DonutChart = ({
   categories,
@@ -12,6 +12,7 @@ export const DonutChart = ({
   formatCurrency,
   totalSpendUSD,
   toUSD,
+  khrRate,
   t
 }) => {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -21,7 +22,8 @@ export const DonutChart = ({
       const catSpendUSD = expenses
         .filter((e) => e.category === name)
         .reduce((sum, e) => sum + toUSD(e.rawAmount || 0, e.currency), 0);
-      const val = primaryCurrency === 'KHR' ? Math.round(catSpendUSD * KHR_RATE) : parseFloat(catSpendUSD.toFixed(2));
+      const rate = khrRate || DEFAULT_KHR_RATE;
+      const val = primaryCurrency === 'KHR' ? Math.round(catSpendUSD * rate) : parseFloat(catSpendUSD.toFixed(2));
       const displayName = currentLang === 'zh' ? cfg.nameZh || cfg.nameEn || name : cfg.nameEn || cfg.nameZh || name;
       return {
         name: displayName,
@@ -29,7 +31,7 @@ export const DonutChart = ({
         color: cfg.color
       };
     }).filter((item) => item.value > 0);
-  }, [categories, expenses, currentLang, primaryCurrency, toUSD]);
+  }, [categories, expenses, currentLang, primaryCurrency, toUSD, khrRate]);
 
   const isEmpty = donutData.length === 0;
 

@@ -1,18 +1,40 @@
-export const KHR_RATE = 4050; // 1 USD = 4,050 KHR
+export const DEFAULT_KHR_RATE = 4050;
+export const KHR_RATE = DEFAULT_KHR_RATE;
+
+/**
+ * Fetches live USD -> KHR rate from open API with offline fallback & caching
+ */
+export async function fetchLiveKhrRate() {
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/USD');
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.rates?.KHR) {
+        const liveRate = Math.round(data.rates.KHR);
+        localStorage.setItem('budget_lens_khr_rate', String(liveRate));
+        return liveRate;
+      }
+    }
+  } catch (err) {
+    console.warn('Using cached or default KHR rate:', err);
+  }
+  const cached = localStorage.getItem('budget_lens_khr_rate');
+  return cached ? Number(cached) : DEFAULT_KHR_RATE;
+}
 
 export const THEME_PALETTE = [
-  '#e8834a', // Brand Orange
-  '#f09b68', // Light Peach Orange
-  '#b85822', // Deep Amber Terracotta
-  '#f7b78f', // Soft Warm Apricot
-  '#d9733a', // Warm Tangerine
-  '#f59e0b', // Amber
-  '#fb923c', // Bright Orange
-  '#ea580c', // Burnt Orange
-  '#e11d48', // Warm Rose
-  '#d97706', // Ochre
-  '#a16207', // Bronze
-  '#71717a'  // Neutral Zinc Slate
+  '#e8834a',
+  '#f09b68',
+  '#b85822',
+  '#f7b78f',
+  '#d9733a',
+  '#f59e0b',
+  '#fb923c',
+  '#ea580c',
+  '#e11d48',
+  '#d97706',
+  '#a16207',
+  '#71717a'
 ];
 
 export const DEFAULT_CATEGORIES = {
@@ -45,7 +67,7 @@ export const BANK_CHANNELS = [
 export const I18N = {
   en: {
     badge_privacy: "local-first • zero-login",
-    header_sub: "Privacy-focused ledger • 1 USD = 4,050 KHR • Local storage",
+    header_sub: "Privacy-focused ledger • 1 USD = {rate} KHR • Local storage",
     btn_sync: "Sync Phone",
     btn_ai_schema: "AI Schema",
     kpi_total_spend: "TOTAL SPEND (MTD)",
@@ -120,7 +142,7 @@ export const I18N = {
   },
   zh: {
     badge_privacy: "本地优先 • 免登录",
-    header_sub: "专注隐私的本地账本 • 1 USD = 4,050 KHR • 本地化存储",
+    header_sub: "专注隐私的本地账本 • 1 USD = {rate} KHR • 本地化存储",
     btn_sync: "手机同步",
     btn_ai_schema: "AI 架构",
     kpi_total_spend: "本月总支出 (MTD)",
